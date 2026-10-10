@@ -1,15 +1,11 @@
-/* Điền cấu hình Firebase của bạn vào đây (Project settings → General → Your apps → Web app).
-   Để null thì app chạy chế độ thử, lưu dữ liệu trong trình duyệt. */
-self.FIREBASE_CONFIG = null;
-/* Ví dụ:
+/* Cấu hình Firebase cho Shining Road */
 self.FIREBASE_CONFIG = {
-  apiKey: "AIza...",
+  apiKey: "AIzaSyBxQfnhSGIvaiGZl-7LgUOhyAavh_yY7Qk",
   authDomain: "shining-road.firebaseapp.com",
   projectId: "shining-road",
-  storageBucket: "shining-road.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abc123"
+  storageBucket: "shining-road.firebasestorage.app",
+  messagingSenderId: "400082556226",
+  appId: "1:400082556226:web:e8cb0bdcae59675f7f64db"
 };
-*/
-/* Project settings → Cloud Messaging → Web Push certificates → Key pair */
+/* Điền sau khi làm phần thông báo đẩy */
 self.VAPID_KEY = "";
