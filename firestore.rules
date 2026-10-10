@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
+    // Dữ liệu riêng của từng người: ví, Pokémon, huy hiệu, tủ đồ, mã thiết bị nhận push
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Mã mời 6 ký tự -> id của nhà
+    match /codes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
+      allow list, update, delete: if false;
+    }
+
+    // Nhà: tối đa 3 thành viên (đổi số 3 ở đây nếu tăng MAXP trong db.js)
+    match /homes/{hid} {
+      function isMember() { return signedIn() && request.auth.uid in resource.data.members; }
+      function sameOwner() { return request.resource.data.owner == resource.data.owner && request.resource.data.code == resource.data.code; }
+      allow get: if isMember();
+      allow create: if signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.members == [request.auth.uid];
+      allow update: if
+        // thành viên sửa dữ liệu chung; chỉ chủ nhà được đổi danh sách thành viên
+        (isMember() && sameOwner() && request.resource.data.members.size() <= 3
+          && (request.resource.data.members == resource.data.members || resource.data.owner == request.auth.uid))
+        // người mới vào nhà bằng mã: chỉ được thêm chính mình
+        || (signedIn() && !(request.auth.uid in resource.data.members)
+          && request.resource.data.members.size() <= 3
+          && request.resource.data.members.hasAll(resource.data.members)
+          && request.resource.data.members.removeAll(resource.data.members) == [request.auth.uid]
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'info']));
+      allow delete: if false;
+    }
+  }
+}

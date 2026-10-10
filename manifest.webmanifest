@@ -1,0 +1,14 @@
+{
+  "name": "Shining Road",
+  "short_name": "Shining Road",
+  "description": "Chia việc nhà thành hành trình phiêu lưu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#62c6f0",
+  "theme_color": "#62c6f0",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
