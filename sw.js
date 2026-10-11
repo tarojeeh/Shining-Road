@@ -1,4 +1,4 @@
-/* Service worker: cài app ra màn hình chính, nhận thông báo đẩy, và lưu đệm cho app chạy nhanh. */
+/* Service worker: cài app ra màn hình chính, nhận thông báo đẩy, lưu đệm để mở app tức thì. */
 importScripts('firebase-config.js');
 if (self.FIREBASE_CONFIG) {
   importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
@@ -6,10 +6,12 @@ if (self.FIREBASE_CONFIG) {
   firebase.initializeApp(self.FIREBASE_CONFIG);
   firebase.messaging();
 }
-const STATIC = 'sr-static-v1';   // ảnh Pokémon, font, thư viện Firebase: ít đổi, lấy từ bộ nhớ trước
-const SHELL = 'sr-shell-v1';     // trang app: lấy bản mới trước, mất mạng thì dùng bản đã lưu
+const STATIC = 'sr-static-v2';   // ảnh Pokémon, font, thư viện Firebase: lấy từ bộ nhớ, không tải lại
+const SHELL = 'sr-shell-v2';     // trang app: mở ngay bản đã lưu, đồng thời tải bản mới cho lần mở sau
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('activate', e => e.waitUntil(
+  caches.keys().then(ks => Promise.all(ks.filter(k => k !== STATIC && k !== SHELL).map(k => caches.delete(k))))
+    .then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET') return;
@@ -26,10 +28,12 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (url.origin === location.origin && !url.pathname.endsWith('firebase-config.js')) {
-    e.respondWith(fetch(req).then(res => {
-      if (res.ok) { const copy = res.clone(); caches.open(SHELL).then(c => c.put(req, copy)); }
-      return res;
-    }).catch(() => caches.match(req)));
+    e.respondWith(caches.open(SHELL).then(async c => {
+      const hit = await c.match(req, {ignoreSearch: true});
+      const net = fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; });
+      if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
+      return net.catch(() => caches.match(req, {ignoreSearch: true}));
+    }));
   }
 });
 self.addEventListener('notificationclick', e => {
